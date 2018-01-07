@@ -76,6 +76,7 @@ Front-end server will forward trade orders to exchanges and trade completions ba
 ## Dependencies ##
 
 - Depends on [Chumak native erlang implementation of ZeroMQ](https://github.com/zeromq/chumak).
-- Depends on [Piqi](https://github.com/alavrik/piqi-erlang) for handling serialization natively on Erlang.
+- Depends on [jsone](https://github.com/sile/jsone) for handling JSON serialization natively on Erlang.
+- Depends on [gpb](https://github.com/tomas-abrahamsson/gpb) for handling protocol buffers natively in Erlang.
 
 Dependencies are resolved through use of [rebar3](https://github.com/erlang/rebar3).
