@@ -2,11 +2,21 @@
 
 Erlang financial exchange front-end.
 
+- [Exchanger](#exchanger)
+    - [Purpose](#purpose)
+    - [Considerations](#considerations)
+        - [Order processing](#order-processing)
+        - [Authentication](#authentication)
+        - [Communication](#communication)
+    - [Dependencies](#dependencies)
+
 ## Purpose ##
 
 Is in charge of client authentication and redirecting buy and sell orders to the approriate exchange.
 
 -----------------------
+
+## Considerations ##
 
 ### Order processing ###
 
@@ -15,7 +25,9 @@ Is in charge of client authentication and redirecting buy and sell orders to the
 Based on this specification front-end will:
 
 - Forward trade orders to the relevant exchange.
-- Forward subscription requests for up to 10 companies per user to the relevant exachanges.
+- Forward ~~subscription requests for up to 10 companies per user to the relevant exchanges~~ relevant exchange address back to client **\***.
+
+<sub> [*]  _For better performance exchanges publish directly to client unfortunatly making it impossible to globally restrict by company, only by exchange._ <sub>
 
 -----------------------
 
