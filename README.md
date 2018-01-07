@@ -10,6 +10,7 @@ Erlang financial exchange front-end.
     - [Communication](#communication)
         - [Front-end <-> Directory](#front-end---directory)
         - [Front-end <-> Client](#front-end---client)
+        - [Front-end <-> Exchange](#front-end---exchange)
     - [Dependencies](#dependencies)
 
 ## Purpose ##
@@ -43,29 +44,32 @@ Based on this specification front-end will:
 
 _Front-end server will work with serialized pertinent information (client authentication requests, trade and consultation information) using [Protocol Buffers](https://github.com/google/protobuf)._
 
-
 ### Front-end <-> Directory ###
 
 Front-end server will be the client gateway to the [REST directory service](https://github.com/Seriyin/Exchanger-Directory).
 
 Front-end must:
 
-- Consult directory for traded company listing.
-- Consult directory for known active exchanges.
-- Consult directory for traded company's exchange.
-- Consult directory for traded company daily statistics:
-  - Opening price.
-  - Closing price.
-  - Minimum price traded for previous and current day.
-  - Maximum price traded for previous and current day.
-
-_**Note:** REST API requests and replies will use JSON format serialization for better Web compatibility._
+- Forward the directory service address directly to the client.
+- Alert client in the event directory is unavailable.
 
 -----------------------
 
 ### Front-end <-> Client ###
 
+Front-end server will deal with requests of authentication and trade ordering.
 
+Front-end must:
+
+- Authenticate clients.
+- Forward trade orders.
+- Forward trade completions from exchanges back to client.
+
+-----------------------
+
+### Front-end <-> Exchange ###
+
+Front-end server will forward trade orders to exchanges and trade completions back to client.
 
 -----------------------
 
@@ -75,4 +79,3 @@ _**Note:** REST API requests and replies will use JSON format serialization for 
 - Depends on [Piqi](https://github.com/alavrik/piqi-erlang) for handling serialization natively on Erlang.
 
 Dependencies are resolved through use of [rebar3](https://github.com/erlang/rebar3).
-
