@@ -35,18 +35,10 @@ handle_message(Ident, Known, Multipart) ->
             maps:get(Ident,Known) ! Multipart,
             Known;
         false ->
-            PID = spawn(main,user_run,[Ident,Multipart]),
+            PID = user:start_with_link(Ident, Multipart),
             maps:put(Known, Ident, PID)
     end.
 
 
-user_run(Ident, Multipart) ->
-    case check_valid_login(Clients, Ident, Multipart) of
-                {ok, Login} ->    
-    receive
-        Bin when is_map(login:decode_msg(Multipart,'Login')) ->
 
-    end.
-
-check_valid_login(Ident, Multipart) ->
 
