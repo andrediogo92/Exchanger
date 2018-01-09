@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message directory_address {
+    string host = 1;
+    int32 port = 2;
+    string index_url = 3;
+}
+
+message exchange_address 
+{
+    string name = 1;
+    string host = 2;
+    int32 port = 3;
+}

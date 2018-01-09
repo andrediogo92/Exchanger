@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message trade_order 
+{
+    string company = 1;
+    int32 quant = 2;
+    float price_max = 3;
+}
+
+message trade_completed 
+{
+    string company = 1;
+    int32 quant = 2;
+    float totat = 3;
+}

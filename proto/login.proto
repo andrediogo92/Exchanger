@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message login_request {
+    string user = 1;
+    string password = 2;
+}
+
+message login_reply 
+{
+    int32 code = 1;
+}
