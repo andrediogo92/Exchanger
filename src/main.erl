@@ -1,8 +1,8 @@
 -module(main).
--export([main/0]).
+-export([start/0]).
 -include("main.hrl").
 
-main() ->
+start() ->
     application:ensure_started(chumak),
     process_flag(trap_exit, true),
     login_manager:start_with_link(),
