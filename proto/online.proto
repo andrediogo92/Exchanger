@@ -1,5 +1,6 @@
 syntax = "proto3";
 
 message online{
+    string name = 0;
     int32 status = 1;
 }
