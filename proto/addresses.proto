@@ -1,14 +1,19 @@
 syntax = "proto3";
 
-message directory_address {
-    string host = 1;
-    int32 port = 2;
-    string index_url = 3;
+enum type 
+{
+    DIRECTORY = 0;
+    EXCHANGE = 1;
 }
 
-message exchange_address 
-{
+message address {
+    string host = 1;
+    int32 port = 2;
+    string name = 3;
+    type type = 4;
+}
+
+message address_request {
+    type type = 0;
     string name = 1;
-    string host = 2;
-    int32 port = 3;
 }
