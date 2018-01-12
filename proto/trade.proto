@@ -2,14 +2,16 @@ syntax = "proto3";
 
 message trade_order 
 {
-    string company = 1;
-    int32 quant = 2;
-    float price_max = 3;
+    boolean buy_or_sell = 1;
+    string exchange = 2;
+    string company = 3;
+    int32 quant = 4;
+    float price = 5;
 }
 
 message trade_completed 
 {
     string company = 1;
     int32 quant = 2;
-    float totat = 3;
+    float total = 3;
 }
