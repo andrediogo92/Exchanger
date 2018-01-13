@@ -7,6 +7,7 @@ message trade_order
     string company = 3;
     int32 quant = 4;
     float price = 5;
+    string user = 6;
 }
 
 message trade_completed 
