@@ -13,12 +13,12 @@
 %% Start up a user interaction process by going to login handling.
 %% @end
 start(Ident, Multipart) ->
-    spawn(fun() -> handle_login(Ident, Multipart) end).
+    spawn(fun() -> handle_login(Ident, Multipart, first) end).
 
 %% @doc
 %% {@link start. Start with atomic link}.
 start_with_link(Ident, Multipart) -> 
-    spawn_link(fun() -> handle_login(Ident, Multipart) end).
+    spawn_link(fun() -> handle_login(Ident, Multipart, first) end).
 
 
 
@@ -40,29 +40,26 @@ check_valid_login(Multipart) ->
     end.
 
 
-
-check_trade_completed(Multipart) ->
-    try trade_pb:decode_msg(Multipart,'trade_completed') of
-        Trade ->
-            {ok, Trade}
-    catch    
-        error:Err ->
-            {error, Err}
-    end.
-
-
-check_trade_request(Ident, Multipart) ->
+check_trade_request(Ident, {Logged, _}, Multipart) ->
     try trade_pb:decode_msg(Multipart,'trade_order') of
         Trade ->
             #{buy_or_sell := Order,
-                company := Company, 
-                quant := Quant,
-                price := Price} = Trade,
-            case Order of
-                true -> 
-                    {trade_buy, Ident, {Company, Quant, Price}};
+              exchange := Exchange,
+              company := Company, 
+              quant := Quant,
+              price := Price,
+              user := User} = Trade,
+            case Logged=:=User of
+                true ->
+                    case Order of
+                        true -> 
+                            {trade_buy, Ident, {Exchange, Company, Quant, Price, User}};
+                        false ->
+                            {trade_sell, Ident, {Exchange, Company, Quant, Price, User}}
+                    end;
                 false ->
-                    {trade_sell, Ident, {Company, Quant, Price}}
+                    login_manager:logout(Logged),
+                    {logout,Logged}
             end
     catch
         error:Err ->
@@ -102,9 +99,21 @@ handle_login(Ident, Multipart) ->
         {ok, Login} -> 
             ?CLIENTER_NAME ! {login, Ident},
             handle_requests(Ident, Login, #{});
-        {invalid, _} ->
-            handle_requests(Ident);
-        {error, _} ->
+        M ->
+            {error, M}
+    end.
+
+handle_login(Ident, Multipart, first) ->
+    case check_valid_login(Multipart) of
+        {ok, Login} -> 
+            ?CLIENTER_NAME ! {login, Ident},
+            case handle_requests(Ident, Login, #{}) of
+                logout ->
+                    handle_requests(Ident);
+                exit ->
+                    exit
+            end;
+        _ ->
             handle_requests(Ident)
     end.
 
@@ -113,24 +122,20 @@ handle_login(Ident, Multipart) ->
 %%
 %% Used for authenticated users.
 %% @end
-handle_requests(Ident, Login, Exchanges) ->
+handle_requests(Ident, Login={User,_}, Exchanges) ->
     receive
+        {logout, User} ->
+            logout;
+        {exchange, Name, PID} ->
+            handle_requests(Ident, 
+                            Login, 
+                            map:put(Name, PID, Exchanges));
+        {trade_completed, {Company, Quant, Total}} ->
+            ?CLIENTER_NAME ! {trade_completed, Ident, {Company, Quant, Total}},
+            handle_requests(Ident, Login, Exchanges);
         Multipart ->
-            case handle_message(Ident, Multipart) of
-                {error, _} ->
-                    handle_requests(Ident, Login, Exchanges);
-                {ex_address, Ident, Name} ->
-                    case map:find(Name, Exchanges) of
-                        {ok, PID} ->
-                            PID ! {ex_address, Ident, Name};
-                        error ->
-                            ?EXCHANGER_NAME ! {ex_address, Ident, Name}
-                    end,
-                    handle_requests(Ident, Login, Exchanges);
-                M ->
-                    ?CLIENTER_NAME ! M,
-                    handle_requests(Ident, Login, Exchanges)
-            end
+            handle_multipart(Ident, Login, Multipart, Exchanges),
+            handle_requests(Ident, Login, Exchanges)
     after ?STUPID_TIME_OUT ->
         ?CLIENTER_NAME ! {exit, Ident}
     end.
@@ -141,28 +146,43 @@ handle_requests(Ident, Login, Exchanges) ->
 handle_requests(Ident) ->
     receive
         Multipart -> 
-            handle_login(Ident,Multipart)
+            case handle_login(Ident,Multipart) of
+                logout ->    
+                    handle_requests(Ident);
+                exit ->
+                    exit
+        end
     after ?TIME_OUT ->
         ?CLIENTER_NAME ! {exit, Ident}
     end.
-    
 
 
-handle_message(Ident, Multipart) ->
-    case check_trade_completed(Multipart) of
-        {ok, Trade} ->
-            #{company := Company, 
-              exchange := Exchange,
-              quant := Quant,
-              total := Total} = Trade,
-            {trade, Ident, {Company, Exchange, Quant, Total}};
+handle_multipart(Ident, Login, Multipart, Exchanges) ->
+    case handle_message(Ident, Login, Multipart) of
         {error, _} ->
-            handle_trade_request(Ident, Multipart)
+            error;
+        {ex_address, Ident, Name} ->
+            case map:find(Name, Exchanges) of
+                {ok, PID} ->
+                    PID ! {ex_address, Ident, Name};
+                error ->
+                    ?EXCHANGER_NAME ! {ex_address, Ident, Name}
+            end;
+        {T, Ident, Trade={Exchange,_,_,_,_}} ->
+            case map:find(Exchange, Exchanges) of
+                {ok, PID} ->
+                    PID ! {T, Ident, Trade};
+                error ->
+                    ?EXCHANGER_NAME ! {T, Ident, Trade}
+            end;
+        M ->
+            ?CLIENTER_NAME ! M
     end.
 
 
-handle_trade_request(Ident, Multipart) ->
-    case check_trade_request(Ident, Multipart) of
+
+handle_message(Ident, Login, Multipart) ->
+    case check_trade_request(Ident, Login, Multipart) of
         L={_, _, _} ->
             L;
         {error, _} ->
