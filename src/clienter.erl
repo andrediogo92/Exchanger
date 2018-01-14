@@ -28,21 +28,35 @@ server() ->
     Rec = spawn_link(fun() -> setup() end),
     receive
         CSockets ->
-            handle_cli_messages(Rec, CSockets, [])
+            handle_cli_messages(Rec, CSockets, #{})
     end.
 
-handle_cli_messages(Rec, CSockets, Known) ->
+handle_cli_messages(Rec, CSockets={CSocket,_}, Known) ->
     receive
+        {trade_completed, User, Trade} ->
+            Ident = maps:get(User,Known),
+            chumak:send_multipart(CSocket,[Ident, Trade]),
+            handle_cli_messages(Rec, CSockets, Known);
+        {ex_address, Ident, M} ->
+            chumak:send_multipart(CSocket,[Ident, M]),
+            handle_cli_messages(Rec, CSockets, Known);
+        {dir_address, Ident, M} ->
+            chumak:send_multipart(CSocket,[Ident, M]),
+            handle_cli_messages(Rec, CSockets, Known);
+        {logout, User} ->
+            New = maps:remove(User, Known),
+            handle_cli_messages(Rec,CSockets, New);
         {recv, Ident, Multipart} -> 
             New = handle_message(Ident, Known, Multipart),
             handle_cli_messages(Rec, CSockets, New);
         {exit, Ident} ->
             New = maps:remove(Ident,Known),
             handle_cli_messages(Rec, CSockets, New);
-        {login, ok, Ident} ->
-            {CSocket,_} = CSockets,
-            chumak:send_multipart(CSocket,[Ident,login:encode_msg(#{code => 200},'login_reply')]),
-            handle_cli_messages(Rec, CSockets, Known)
+        {login, User, Ident} ->
+            New = maps:put(User, Ident, Known),
+            Login=login:encode_msg(#{code => 200},'login_reply'),
+            chumak:send_multipart(CSocket,[Ident, Login]),
+            handle_cli_messages(Rec, CSockets, New)
     end.
 
 handle_message(Ident, Known, Multipart) ->
@@ -53,7 +67,7 @@ handle_message(Ident, Known, Multipart) ->
             Known;
         false ->
             PID = user:start(Ident, Multipart),
-            maps:put(Known, Ident, PID)
+            maps:put(Ident, PID, Known)
     end.
 
 
