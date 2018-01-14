@@ -12,7 +12,9 @@ message trade_order
 
 message trade_completed 
 {
-    string company = 1;
-    int32 quant = 2;
-    float total = 3;
+    string exchange = 1;
+    string company = 2;
+    int32 quant = 3;
+    float total = 4;
+    string user = 5;
 }
