@@ -12,11 +12,25 @@ create_and_bind_exchanges() ->
     {ok,_EBindPid} = chumak:bind(ESocket,tcp,"localhost",?PORT_EXCHANGE),
     {ESocket,_EBindPid}.
 
+setup() ->
+    CSockets = create_and_bind_exchanges(),
+    ?CLIENTER_NAME ! CSockets,
+    loop(CSockets).
+        
+loop({CSocket,Bind}) ->
+    {ok, [Identity | Part]} = chumak:recv_multipart(CSocket),
+    ?CLIENTER_NAME ! {recv, Identity, Part},
+    loop({CSocket,Bind}).
+        
 
-server() ->
-    ESockets = create_and_bind_exchanges(),
-    handle_ex_messages(ESockets,[]).
+server() -> 
+    process_flag(trap_exit, true),
+    Rec = spawn_link(fun() -> setup() end),
+    receive
+        ESockets ->
+            handle_ex_messages(Rec, ESockets, #{})
+    end.
 
-handle_ex_messages(ESockets,[]) ->
+handle_ex_messages(Rec, ESockets={ESocket,_}, Known) ->
     ESockets.
 
