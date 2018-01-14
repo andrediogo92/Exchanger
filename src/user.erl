@@ -30,7 +30,7 @@ start_with_link(Ident, Multipart) ->
 %% @param Multipart is the message to try to decode.
 %% @return A tuple with error or the result of {@link login_manager:login, attempting to login in the login_manager}.
 check_valid_login(Multipart) ->
-    try login:decode_msg(Multipart,login_request) of
+    try login:decode_msg(Multipart,'login_request') of
         Login ->
             #{user := User, password := Password} = Login,
             {login_manager:login(User,Password),{User,Password}}
@@ -44,18 +44,14 @@ check_trade_request(Ident, {Logged, _}, Multipart) ->
     try trade_pb:decode_msg(Multipart,'trade_order') of
         Trade ->
             #{buy_or_sell := Order,
-              exchange := Exchange,
-              company := Company, 
-              quant := Quant,
-              price := Price,
               user := User} = Trade,
             case Logged=:=User of
                 true ->
                     case Order of
                         true -> 
-                            {trade_buy, Ident, {Exchange, Company, Quant, Price, User}};
+                            {trade_buy, Ident, Trade};
                         false ->
-                            {trade_sell, Ident, {Exchange, Company, Quant, Price, User}}
+                            {trade_sell, Ident, Trade}
                     end;
                 false ->
                     login_manager:logout(Logged),
@@ -67,16 +63,16 @@ check_trade_request(Ident, {Logged, _}, Multipart) ->
     end.
 
 
-check_address_request(Ident, Multipart) ->
+check_address_request(Multipart) ->
     try trade_pb:decode_msg(Multipart,'address_request') of
         Address ->
             #{name := Name,
               type := Type} = Address,
             case Type of
                 'DIRECTORY' ->
-                    {dir_address, Ident, Name};
+                    dir_address;
                 'EXCHANGE' ->
-                    {ex_address, Ident, Name}
+                    {ex_address, Name}
             end
     catch
         error:Err ->
@@ -105,8 +101,8 @@ handle_login(Ident, Multipart) ->
 
 handle_login(Ident, Multipart, first) ->
     case check_valid_login(Multipart) of
-        {ok, Login} -> 
-            ?CLIENTER_NAME ! {login, Ident},
+        {ok, Login={User,_}} -> 
+            ?CLIENTER_NAME ! {login, User, Ident},
             case handle_requests(Ident, Login, #{}) of
                 logout ->
                     handle_requests(Ident);
@@ -125,18 +121,17 @@ handle_login(Ident, Multipart, first) ->
 handle_requests(Ident, Login={User,_}, Exchanges) ->
     receive
         {logout, User} ->
+            ?CLIENTER_NAME ! {logout, User},
             logout;
         {exchange, Name, PID} ->
             handle_requests(Ident, 
                             Login, 
                             map:put(Name, PID, Exchanges));
-        {trade_completed, {Company, Quant, Total}} ->
-            ?CLIENTER_NAME ! {trade_completed, Ident, {Company, Quant, Total}},
-            handle_requests(Ident, Login, Exchanges);
         Multipart ->
             handle_multipart(Ident, Login, Multipart, Exchanges),
             handle_requests(Ident, Login, Exchanges)
     after ?STUPID_TIME_OUT ->
+        ?CLIENTER_NAME ! {logout, User},
         ?CLIENTER_NAME ! {exit, Ident}
     end.
 
@@ -146,12 +141,8 @@ handle_requests(Ident, Login={User,_}, Exchanges) ->
 handle_requests(Ident) ->
     receive
         Multipart -> 
-            case handle_login(Ident,Multipart) of
-                logout ->    
-                    handle_requests(Ident);
-                exit ->
-                    exit
-        end
+            handle_login(Ident,Multipart),
+            handle_requests(Ident)
     after ?TIME_OUT ->
         ?CLIENTER_NAME ! {exit, Ident}
     end.
@@ -168,7 +159,10 @@ handle_multipart(Ident, Login, Multipart, Exchanges) ->
                 error ->
                     ?EXCHANGER_NAME ! {ex_address, Ident, Name}
             end;
-        {T, Ident, Trade={Exchange,_,_,_,_}} ->
+        {dir_address, Ident, M} ->
+            ?CLIENTER_NAME ! {dir_address, Ident, M};
+        {T, Ident, Trade} ->
+            #{exchange := Exchange}=Trade,
             case map:find(Exchange, Exchanges) of
                 {ok, PID} ->
                     PID ! {T, Ident, Trade};
@@ -190,9 +184,17 @@ handle_message(Ident, Login, Multipart) ->
     end.
         
 handle_address_request(Ident, Multipart) ->
-    case check_address_request(Ident, Multipart) of
-        L={_, _, _} ->
-            L;
+    case check_address_request(Multipart) of
+        dir_address ->
+            {Host, Port} = ?DIRECTORY,
+            Adrs = #{host => Host, 
+                     port => Port, 
+                     name => <<"index.html">>, 
+                     type => 'DIRECTORY'},
+            M = addresses_pb:encode_msg(Adrs, 'address'),
+            {dir_address, Ident, M};
+        {ex_address, Name} ->
+            {ex_address, Ident, Name};
         {error, M} ->
             {error, M}
     end.
