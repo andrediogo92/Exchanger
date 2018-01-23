@@ -6,14 +6,17 @@ import "addresses.proto";
 package proto;
 
 message WrapperMessageClient {
-    bool login = 1;
-    bool trade = 2;
-    bool address = 3;
+    bool isLogin = 1;
+    bool isTrade = 2;
+    bool isAddress = 3;
+    bool isAddressRequest = 4;
+    bool isLogout = 5;
     oneof message {
-        TradeOrder trade = 4;
-        LoginRequest login = 5;
-        AddressRequest addressRequest = 6;
-        TradeCompleted tradeCompleted = 7;
-        Address address = 8;
+        TradeOrder tradeRequest = 6;
+        LoginRequest login = 7;
+        LogoutRequest logout = 8;
+        AddressRequest addressRequest = 9;
+        TradeCompleted trade = 10;
+        Address address = 11;
     }
 }
