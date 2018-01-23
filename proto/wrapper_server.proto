@@ -1,0 +1,19 @@
+syntax = "proto3";
+import "trade.proto";
+import "heartbeat.proto";
+import "addresses.proto";
+
+package proto;
+
+message WrapperMessageServer {
+    bool isOnline = 1;
+    bool isAddress = 2;
+    bool isTrade = 3;
+    bool isTradeRequest = 4;
+    oneof message {
+        TradeCompleted trade = 5;
+        TradeOrder tradeRequest = 6;
+        Online online = 7;
+        Address address = 8;
+    }
+}

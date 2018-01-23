@@ -1,0 +1,19 @@
+syntax = "proto3";
+import "trade.proto";
+import "login.proto";
+import "addresses.proto";
+
+package proto;
+
+message WrapperMessageClient {
+    bool login = 1;
+    bool trade = 2;
+    bool address = 3;
+    oneof message {
+        TradeOrder trade = 4;
+        LoginRequest login = 5;
+        AddressRequest addressRequest = 6;
+        TradeCompleted tradeCompleted = 7;
+        Address address = 8;
+    }
+}
