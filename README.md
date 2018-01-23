@@ -8,6 +8,7 @@ Erlang financial exchange front-end.
         - [Order processing](#order-processing)
         - [Authentication](#authentication)
     - [Communication](#communication)
+        - [GPB specifics](#gpb-specifics)
         - [Front-end <-> Directory](#front-end---directory)
         - [Front-end <-> Client](#front-end---client)
         - [Front-end <-> Exchange](#front-end---exchange)
@@ -43,6 +44,10 @@ Based on this specification front-end will:
 ## Communication ##
 
 _Front-end server will work with serialized pertinent information (client authentication requests, trade and consultation information) using [Protocol Buffers](https://github.com/google/protobuf)._
+
+### GPB specifics ###
+
+Protocol buffer messages will be grouped into wrapper messages to decode from multiple options. In Erlang, hasField() methods do not make sense, so a boolean value must be explicitly set for each possible message needing decoding on *Exchanger*.
 
 ### Front-end <-> Directory ###
 
