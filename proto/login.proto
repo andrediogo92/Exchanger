@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-message login_request {
+package proto;
+
+message LoginRequest {
     string user = 1;
     string password = 2;
 }
 
-message login_reply 
+message LoginReply 
 {
     int32 code = 1;
 }

@@ -1,19 +1,21 @@
 syntax = "proto3";
 
+package proto;
+
 enum type 
 {
     DIRECTORY = 0;
     EXCHANGE = 1;
 }
 
-message address {
+message Address {
     string host = 1;
     int32 port = 2;
     string name = 3;
     type type = 4;
 }
 
-message address_request {
+message AddressRequest {
     type type = 1;
     string name = 2;
 }
