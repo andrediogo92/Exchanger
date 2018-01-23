@@ -1,20 +1,23 @@
 syntax = "proto3";
 
-message trade_order 
+package proto;
+
+message TradeOrder
 {
-    boolean buy_or_sell = 1;
+    bool buyOrSell = 1;
     string exchange = 2;
     string company = 3;
     int32 quant = 4;
-    float price = 5;
+    double price = 5;
     string user = 6;
 }
 
-message trade_completed 
+message TradeCompleted 
 {
     string exchange = 1;
     string company = 2;
     int32 quant = 3;
-    float total = 4;
+    double total = 4;
     string user = 5;
+    int64 timestamp = 6;
 }
