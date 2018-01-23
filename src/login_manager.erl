@@ -11,19 +11,19 @@ loop(Dick) ->
         {{login,U,P},From} -> 
             case maps:find(U,Dick) of 
                 {ok, {P,false}} -> 
-                    From ! {?MODULE,ok},
+                    From ! {?LOGINER_NAME,ok},
                     loop(maps:update(U,{P,true},Dick));
 
-                _ -> From ! {?MODULE,invalid},
+                _ -> From ! {?LOGINER_NAME,invalid},
                      loop(Dick)
             end;
         {{logout,U},From} -> 
             case maps:find(U,Dick) of
                 {ok, {P,true}} -> 
-                    From ! {?MODULE,ok},
+                    From ! {?LOGINER_NAME,ok},
                     loop(maps:update(U,{P,false},Dick));
 
-                _ -> From ! {?MODULE,invalid},
+                _ -> From ! {?LOGINER_NAME,invalid},
                      loop(Dick)
             end;
         {online,From} ->
@@ -32,13 +32,13 @@ loop(Dick) ->
 %           M = maps:to_list(Dick),
 %           F = lists:filter(M,fun(_,{_,B}) -> B == true end),
 %           R = lists:map(F,fun({U,{_,true}}) -> U end),
-            From ! {?MODULE,R},
+            From ! {?LOGINER_NAME,R},
             loop(Dick)
     end.
 
 sendReceive(A) -> 
-    ?MODULE ! {A,self()},
-    receive {?MODULE,R} -> R end.
+    ?LOGINER_NAME ! {A,self()},
+    receive {?LOGINER_NAME,R} -> R end.
 
 login(U,P) -> 
     sendReceive({login,U,P}).
