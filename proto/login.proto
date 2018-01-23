@@ -7,6 +7,10 @@ message LoginRequest {
     string password = 2;
 }
 
+message LogoutRequest{
+    string user = 1;
+}
+
 message LoginReply 
 {
     int32 code = 1;
