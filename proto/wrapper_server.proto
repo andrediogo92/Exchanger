@@ -8,12 +8,14 @@ package proto;
 message WrapperMessageServer {
     bool isOnline = 1;
     bool isAddress = 2;
-    bool isTrade = 3;
-    bool isTradeRequest = 4;
+    bool isAddressRequest = 3;
+    bool isTrade = 4;
+    bool isTradeRequest = 5;
     oneof message {
-        TradeCompleted trade = 5;
-        TradeOrder tradeRequest = 6;
-        Online online = 7;
-        Address address = 8;
+        TradeCompleted trade = 6;
+        TradeOrder tradeRequest = 7;
+        Online online = 8;
+        Address address = 9;
+        AddressRequest addressRequest = 10;
     }
 }
