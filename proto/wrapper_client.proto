@@ -10,13 +10,17 @@ message WrapperMessageClient {
     bool isTrade = 2;
     bool isAddress = 3;
     bool isAddressRequest = 4;
-    bool isLogout = 5;
+    bool isNoAddress = 5;
+    bool isLogout = 6;
+    bool isTradeFailed = 7;
     oneof message {
-        TradeOrder tradeRequest = 6;
-        LoginRequest login = 7;
-        LogoutRequest logout = 8;
-        AddressRequest addressRequest = 9;
-        TradeCompleted trade = 10;
-        Address address = 11;
+        TradeOrder tradeRequest = 8;
+        LoginRequest login = 9;
+        LogoutRequest logout = 10;
+        AddressRequest addressRequest = 11;
+        TradeCompleted trade = 12;
+        TradeFailed tradeFailed = 13;
+        Address address = 14;
+        NoAddress noAddress = 15;
     }
 }
