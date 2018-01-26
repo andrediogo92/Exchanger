@@ -1,6 +1,6 @@
 -module(login_manager).
 -export([start_with_link/0,start/0, login/2, logout/1, online/0]).
--include("main.hrl").
+-include("exchanger.hrl").
 
 start() -> register(?LOGINER_NAME,spawn(fun() -> loop(?KNOWN)end)).
 
