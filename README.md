@@ -12,6 +12,7 @@ Erlang financial exchange front-end.
         - [Front-end <-> Directory](#front-end---directory)
         - [Front-end <-> Client](#front-end---client)
         - [Front-end <-> Exchange](#front-end---exchange)
+    - [Instalation](#instalation)
     - [Dependencies](#dependencies)
 
 ## Purpose ##
@@ -75,6 +76,20 @@ Front-end must:
 ### Front-end <-> Exchange ###
 
 Front-end server will forward trade orders to exchanges and trade completions back to client.
+
+-----------------------
+
+## Instalation ##
+
+Run 
+
+>*$>* rebar3 release -n prod
+
+for production version with self-contained erts or
+
+>*$>* rebar3 release -n dev
+
+for dev version in main rebar.config directory.
 
 -----------------------
 
