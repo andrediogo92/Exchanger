@@ -1,6 +1,6 @@
--module(clienter).
+-module(clienter_main).
 -export([start/0, start_with_link/0]).
--include("main.hrl").
+-include("exchanger.hrl").
 
 
 start() -> register(?CLIENTER_NAME, spawn(fun() -> server() end)).
@@ -37,6 +37,12 @@ handle_cli_messages(Rec, CSockets={CSocket,_}, Known) ->
             Ident = maps:get(User,Known),
             chumak:send_multipart(CSocket,[Ident, Trade]),
             handle_cli_messages(Rec, CSockets, Known);
+        {no_address, Ident, M} ->
+            chumak:send_multipart(CSocket,[Ident, M]),
+            handle_cli_messages(Rec, CSockets, Known);    
+        {trade_failed, Ident, M} ->
+            chumak:send_multipart(CSocket,[Ident, M]),
+            handle_cli_messages(Rec, CSockets, Known);
         {ex_address, Ident, M} ->
             chumak:send_multipart(CSocket,[Ident, M]),
             handle_cli_messages(Rec, CSockets, Known);
@@ -66,7 +72,7 @@ handle_message(Ident, Known, Multipart) ->
             maps:get(Ident,Known) ! Multipart,
             Known;
         false ->
-            PID = user:start(Ident, Multipart),
+            PID = exchange_user:start(Ident, Multipart),
             maps:put(Ident, PID, Known)
     end.
 
