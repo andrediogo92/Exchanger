@@ -5,9 +5,9 @@
 %% @end
 %% @see clienter
 %% @see exchange
--module(user).
+-module(exchange_user).
 -export([start/2,start_with_link/2]).
--include("main.hrl").
+-include("exchanger.hrl").
 
 %% @doc
 %% Start up a user interaction process by going to login handling.
@@ -84,6 +84,14 @@ handle_login(Ident, Multipart, first) ->
 %% @end
 handle_requests(Ident, Login={User,_}, Exchanges) ->
     receive
+        failed_address ->
+            T = #{isNoAddress => true, message => {noAddress, #{noAddress => <<"Exchange offline">>}}},
+            M = wrapper_client_pb:encode_msg(T),
+            ?CLIENTER_NAME ! {no_address, Ident, M};
+        failed ->
+            T = #{isTradeFailed => true, message => {tradeFailed, #{noExchange => <<"Exchange offline">>}}},
+            M = wrapper_client_pb:encode_msg(T),
+            ?CLIENTER_NAME ! {trade_failed, Ident, M};
         {exchange, Name, PID} ->
             handle_requests(Ident, 
                             Login, 
@@ -119,24 +127,19 @@ handle_multipart(Ident, {User,_}, Multipart, Exchanges) ->
         logout ->
             ?CLIENTER_NAME ! {logout, User},
             logout;
-        {ex_address, Ident, Name} ->
+        {ex_address, Client, Name} ->
             case map:find(Name, Exchanges) of
                 {ok, PID} ->
-                    PID ! {ex_address, Ident, Name};
+                    PID ! {ex_address, Client, Name};
                 error ->
-                    ?EXCHANGER_NAME ! {ex_address, Ident, Name}
+                    ?EXCHANGER_NAME ! {ex_address, Client, Name}
             end,
             nothing;
         {dir_address, Ident, M} ->
             ?CLIENTER_NAME ! {dir_address, Ident, M},
             nothing;
-        M = {trade, Ident, Exchange, _} ->
-            case map:find(Exchange, Exchanges) of
-                {ok, PID} ->
-                    PID ! M;
-                error ->
-                    ?EXCHANGER_NAME ! M
-            end,
+        M = {trade_request, _, _, _} ->
+            ?EXCHANGER_NAME ! M,
             nothing;
         _ ->
             error
@@ -146,14 +149,14 @@ handle_multipart(Ident, {User,_}, Multipart, Exchanges) ->
 
 handle_message(Ident, Multipart) ->
     case wrapper_client_pb:decode_msg(Multipart, 'WrapperMessageClient') of
-        #{isLogin := true, message := M} ->
+        #{isLogin := true, message := {_, M}} ->
             check_valid_login(Ident, M);
-        #{isLogout := true, message := M} ->
+        #{isLogout := true, message := {_,M}} ->
             just_logout(M);
-        #{isAddressRequest := true, message := M} ->
+        #{isAddressRequest := true, message := {_,M}} ->
             handle_address_request(Ident, M);
-        #{isTrade := true, message := #{exchange := Exchange}} ->
-            {trade, Ident, Exchange, Multipart}
+        #{isTrade := true, message := {_,#{exchange := Exchange}}} ->
+            {trade_request, self(), Exchange, Multipart}
     end.
         
 
@@ -167,9 +170,9 @@ handle_address_request(Ident, Address) ->
                          port => Port, 
                          name => <<"index.html">>, 
                          type => 'DIRECTORY'},               
-                New = #{isAddress => true, message => Adrs},
+                New = #{isAddress => true, message => {address, Adrs}},
                 M = wrapper_client_pb:encode_msg(New),
                 {dir_address, Ident, M};
         'EXCHANGE' ->
-            {ex_address, Ident, Name}
+            {ex_address, self(), Name}
     end.
