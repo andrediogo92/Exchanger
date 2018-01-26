@@ -12,6 +12,10 @@ message TradeOrder
     string user = 6;
 }
 
+message TradeFailed {
+    string noExchange = 1;
+}
+
 message TradeCompleted 
 {
     string exchange = 1;
