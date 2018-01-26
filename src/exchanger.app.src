@@ -1,11 +1,11 @@
 {application, exchanger, [
     {description, "Front-end to a financial exchange"},
     {vsn,"0.1.0"},
-    {modules,[]},
     {registered,[]},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        chumak
     ]},
-    {mod,{main,[]}}
+    {mod,{exchanger_app,[]}}
 ]}.
